@@ -13,7 +13,7 @@ public class OtherService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.e("NativeDaemon", "onOtherServiceCreate");
-        NativeDaemon.getInstance(OtherService.this).startDaemon(false);
+        new NativeDaemon(this).runAssist();
     }
 
     @Override

@@ -13,8 +13,7 @@ public class DaemonService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.e("NativeDaemon", "onDaemonServiceCreate");
-        startService(new Intent(DaemonService.this, DaemonService.class));
-        NativeDaemon.getInstance(DaemonService.this).startDaemon(true);
+        new NativeDaemon(this).runCore();
     }
 
     @Override

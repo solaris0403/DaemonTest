@@ -1,0 +1,9 @@
+#define BUFFER_SIZE 				2048
+#define	DAEMON_CALLBACK_NAME		"onDaemonDead"
+#define	PARAM_OTHER_PKG_NAME			"-pkg"
+#define	PARAM_OTHER_SVC_NAME			"-svc"
+#define	PARAM_OTHER_SERVICE_FILE			"-sf"
+#define	PARAM_OTHER_SERVICE_FILE_TMP			"-sft"
+#define	PARAM_SLEF_NATIVE_FILE				"-nf"
+#define	PARAM_SLEF_NATIVE_FILE_TMP				"-nft"
+#define	PARAM_IS_CORE_SERVICE				"-cs"

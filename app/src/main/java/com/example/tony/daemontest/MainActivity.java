@@ -11,5 +11,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         startService(new Intent(this, DaemonService.class));
+        startService(new Intent(this, OtherService.class));
     }
 }

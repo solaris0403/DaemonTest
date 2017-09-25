@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_example_tony_daemontest_NativeDaemon
  * Method:    doDaemon
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZ)V
  */
 JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon
-  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jstring, jstring, jint);
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jstring, jint, jboolean);
 
 #ifdef __cplusplus
 }
