@@ -7,7 +7,7 @@ LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib -llog -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := daemon
+LOCAL_MODULE    := daemon1
 LOCAL_SRC_FILES := daemon.c
 LOCAL_CFLAGS += -pie -fPIE
 LOCAL_LDFLAGS += -pie -fPIE
@@ -16,7 +16,7 @@ LOCAL_LDLIBS += -L$(SYSROOT)/usr/lib -llog -lm -lz
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := daemonx
+LOCAL_MODULE    := daemon2
 LOCAL_SRC_FILES := daemon.c
 LOCAL_CFLAGS += -pie -fPIE
 LOCAL_LDFLAGS += -pie -fPIE

@@ -31,8 +31,21 @@
         <service
             android:name=".OtherService"
             android:enabled="true"
-            android:process=":other"
-            android:exported="true"></service>
+            android:exported="true"
+            android:process=":other" />
+        <service
+            android:name=".SuperService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <receiver
+            android:name=".DaemonReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="com.example.tony.daemontest.DaemonReceiver" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -6,6 +6,14 @@
 #include <dirent.h>
 #include <signal.h>
 
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <syslog.h>
+#include <sys/param.h>
+#include <dirent.h>
+
 #include "log.h"
 
 /**
@@ -37,8 +45,7 @@ char *str_stitching(const char *str1, const char *str2, const char *str3) {
  */
 jobject get_context(JNIEnv* env, jobject jobj) {
 	jclass thiz_cls = (*env)->GetObjectClass(env, jobj);
-	jfieldID context_field = (*env)->GetFieldID(env, thiz_cls, "mContext",
-			"Landroid/content/Context;");
+	jfieldID context_field = (*env)->GetFieldID(env, thiz_cls, "mContext", "Landroid/content/Context;");
 	return (*env)->GetObjectField(env, jobj, context_field);
 }
 
@@ -69,16 +76,68 @@ void start_service(char* package_name, char* service_name) {
 	if (pid < 0) {
 		//error, do nothing...
 	} else if (pid == 0) {
+	    setsid();
+	    int i;
+	    for(i=0; i<3; i++){
+	        close(i);
+	    }
+	    chdir("/");
+	    umask(0);
+		if (package_name == NULL || service_name == NULL) {
+			exit(EXIT_SUCCESS);
+		}
+		int version = get_version();
+		char* pkg_svc_name = str_stitching(package_name, "/", service_name);
+
+		if (version >= 17 || version == 0) {
+			execlp("am", "am", "startservice", "--user", "0", "-n", pkg_svc_name, (char *) NULL);
+		} else {
+			execlp("am", "am", "startservice", "-n", pkg_svc_name, (char *) NULL);
+		}
+		exit(EXIT_SUCCESS);
+	} else {
+	    exit(EXIT_SUCCESS);
+//		waitpid(pid, NULL, 0);
+	}
+}
+
+/**
+ * start a android service
+ */
+void send_broadcast(char* action) {
+	pid_t pid = fork();
+	if (pid < 0) {
+		//error, do nothing...
+	} else if (pid == 0) {
+		if (action == NULL) {
+			exit(EXIT_SUCCESS);
+		}
+		LOGE("send broadcast");
+		execlp("am", "am", "broadcast", "-a", action, (char *) NULL);
+		exit(EXIT_SUCCESS);
+	} else {
+//		waitpid(pid, NULL, 0);
+	}
+}
+
+/**
+ * start a android service
+ */
+void stop_service(char* package_name, char* service_name) {
+	pid_t pid = fork();
+	if (pid < 0) {
+		//error, do nothing...
+	} else if (pid == 0) {
 		if (package_name == NULL || service_name == NULL) {
 			exit(EXIT_SUCCESS);
 		}
 		int version = get_version();
 		char* pkg_svc_name = str_stitching(package_name, "/", service_name);
 		if (version >= 17 || version == 0) {
-			execlp("am", "am", "startservice", "--user", "0", "-n",
+			execlp("am", "am", "force-stop", "--user", "0", "-n",
 					pkg_svc_name, (char *) NULL);
 		} else {
-			execlp("am", "am", "startservice", "-n", pkg_svc_name,
+			execlp("am", "am", "force-stop", "-n", pkg_svc_name,
 					(char *) NULL);
 		}
 		exit(EXIT_SUCCESS);
@@ -92,8 +151,7 @@ void notify_and_waitfor(char *observer_self_path, char *observer_daemon_path) {
 	int observer_self_descriptor = open(observer_self_path, O_RDONLY);
 	if (observer_self_descriptor == -1) {
 		//创建当前进程临时文件,用于其他进程监听
-		observer_self_descriptor = open(observer_self_path, O_CREAT,
-		S_IRUSR | S_IWUSR);
+		observer_self_descriptor = open(observer_self_path, O_CREAT,S_IRUSR | S_IWUSR);
 	}
 	int observer_daemon_descriptor = open(observer_daemon_path, O_RDONLY);
 	while (observer_daemon_descriptor == -1) {
@@ -104,7 +162,7 @@ void notify_and_waitfor(char *observer_self_path, char *observer_daemon_path) {
 	//将对方的文件删除
 	remove(observer_daemon_path);
 	//自身文件加锁成功
-	LOGE("%s进程:文件加锁成功", observer_daemon_path);
+	LOGE("%s 进程准备就绪", observer_daemon_path);
 }
 
 /**

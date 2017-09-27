@@ -1,8 +1,13 @@
 package com.example.tony.daemontest;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.os.IBinder;
+import android.os.Parcel;
+import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -10,11 +15,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 
 public class NativeDaemon {
     private final String BINARY_DEST_DIR_NAME = "bin";
-    private final String BINARY_FILE_NAME = "daemon";
-    private final String BINARY_FILE_NAME_X = "daemonx";
+    private final String BINARY_FILE_NAME_1 = "daemon1";
+    private final String BINARY_FILE_NAME_2 = "daemon2";
+    private final String BINARY_FILE_PROCESS_NAME_1 = "daemon1_d";
+    private final String BINARY_FILE_PROCESS_NAME_2 = "daemon2_d";
 
     private static final String SELF_SERVICE_FILE = "s1f";
     private static final String OTHER_SERVICE_FILE = "s2f";
@@ -36,6 +45,64 @@ public class NativeDaemon {
     private Context mContext;
     public NativeDaemon(Context context) {
         this.mContext = context;
+        installBinary(mContext, true);
+        installBinary(mContext, false);
+//        initAmsBinder();
+//        initServiceParcel();
+//        startServiceByAmsBinder();
+    }
+
+    private Parcel					mServiceData;
+    private void initServiceParcel() {
+        Intent intent = new Intent();
+        ComponentName component = new ComponentName(mContext.getPackageName(), SuperService.class.getCanonicalName());
+        intent.setComponent(component);
+        //write pacel
+        mServiceData = Parcel.obtain();
+        mServiceData.writeInterfaceToken("android.app.IActivityManager");
+        mServiceData.writeStrongBinder(null);
+        intent.writeToParcel(mServiceData, 0);
+        mServiceData.writeString(null);
+        mServiceData.writeInt(0);
+    }
+
+    private boolean startServiceByAmsBinder(){
+        try {
+            if(mRemote == null || mServiceData == null){
+                Log.e("Daemon", "REMOTE IS NULL or PARCEL IS NULL !!!");
+                return false;
+            }
+            mRemote.transact(34, mServiceData, null, 0);//START_SERVICE_TRANSACTION = 34
+            return true;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+    private IBinder 				mRemote;
+    private void initAmsBinder() {
+        Class<?> activityManagerNative;
+        try {
+            activityManagerNative = Class.forName("android.app.ActivityManagerNative");
+            Object amn = activityManagerNative.getMethod("getDefault").invoke(activityManagerNative);
+            Field mRemoteField = amn.getClass().getDeclaredField("mRemote");
+            mRemoteField.setAccessible(true);
+            mRemote = (IBinder) mRemoteField.get(amn);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -68,11 +135,10 @@ public class NativeDaemon {
     public void runCore() {
         Thread t = new Thread(){
             public void run() {
-                installBinary(mContext, true);
-                File daemonDir = mContext.getDir(BINARY_DEST_DIR_NAME, Context.MODE_PRIVATE);
+                File daemonDir = mContext.getDir(BINARY_DEST_DIR_NAME, Context.MODE_WORLD_WRITEABLE);
                 doDaemon(
-                        new File(daemonDir, BINARY_FILE_NAME).getAbsolutePath(),
-                        BINARY_FILE_NAME,
+                        new File(daemonDir, BINARY_FILE_NAME_1).getAbsolutePath(),
+                        BINARY_FILE_PROCESS_NAME_1,
                         new File(daemonDir, SELF_SERVICE_FILE).getAbsolutePath(),
                         new File(daemonDir, OTHER_SERVICE_FILE).getAbsolutePath(),
                         new File(daemonDir, SELF_SERVICE_FILE_TMP).getAbsolutePath(),
@@ -86,7 +152,7 @@ public class NativeDaemon {
                         DaemonService.class.getCanonicalName(),
                         OtherService.class.getCanonicalName(),
                         Build.VERSION.SDK_INT,
-                        true);
+                        false);
             }
         };
         t.start();
@@ -95,23 +161,29 @@ public class NativeDaemon {
     public void runAssist() {
         Thread t = new Thread(){
             public void run() {
-                installBinary(mContext, false);
                 File daemonDir = mContext.getDir(BINARY_DEST_DIR_NAME, Context.MODE_PRIVATE);
                 doDaemon(
-                        new File(daemonDir, BINARY_FILE_NAME_X).getAbsolutePath(),
-                        BINARY_FILE_NAME_X,
+                        new File(daemonDir, BINARY_FILE_NAME_2).getAbsolutePath(),
+                        BINARY_FILE_PROCESS_NAME_2,
+
                         new File(daemonDir, OTHER_SERVICE_FILE).getAbsolutePath(),
                         new File(daemonDir, SELF_SERVICE_FILE).getAbsolutePath(),
+
                         new File(daemonDir, OTHER_SERVICE_FILE_TMP).getAbsolutePath(),
                         new File(daemonDir, SELF_SERVICE_FILE_TMP).getAbsolutePath(),
+
                         new File(daemonDir, OTHER_NATIVE_FILE).getAbsolutePath(),
                         new File(daemonDir, SELF_NATIVE_FILE).getAbsolutePath(),
+
                         new File(daemonDir, OTHER_NATIVE_FILE_TMP).getAbsolutePath(),
                         new File(daemonDir, SELF_NATIVE_FILE_TMP).getAbsolutePath(),
+
                         mContext.getPackageName(),
                         mContext.getPackageName(),
+
                         OtherService.class.getCanonicalName(),
                         DaemonService.class.getCanonicalName(),
+
                         Build.VERSION.SDK_INT,
                         false);
             }
@@ -130,9 +202,9 @@ public class NativeDaemon {
             binaryDirName = "armeabi";
         }
         if (isCore) {
-            return install(context, BINARY_DEST_DIR_NAME, binaryDirName, BINARY_FILE_NAME);
+            return install(context, BINARY_DEST_DIR_NAME, binaryDirName, BINARY_FILE_NAME_1);
         } else {
-            return install(context, BINARY_DEST_DIR_NAME, binaryDirName, BINARY_FILE_NAME_X);
+            return install(context, BINARY_DEST_DIR_NAME, binaryDirName, BINARY_FILE_NAME_2);
         }
     }
 
@@ -176,9 +248,6 @@ public class NativeDaemon {
      * native回调
      */
     public void onDaemonDead() {
-        //关闭两个service进程
-        //启动两个service进程
-        Log.e("NativeDaemon", "onDaemonDead");
+        Log.e("NativeDaemon", "onDaemonDead start");
     }
-
 }

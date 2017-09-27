@@ -7,6 +7,7 @@
 #include "com_example_tony_daemontest_NativeDaemon.h"
 #include "constant.h"
 #include "common.c"
+#include <errno.h>
 #include <jni.h>
 
 JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JNIEnv *env, jobject jobj,
@@ -18,17 +19,18 @@ JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JN
 		jstring selfPkgName, jstring otherPkgName,
 		jstring selfSvcName, jstring otherSvcName,
 		jint sdkVersion, jboolean isCoreService) {
-	if(selfDaemonPath == NULL || selfDaemonName == NULL
-			|| selfServiceFile == NULL || otherServiceFile == NULL
-			|| selfServiceFileTmp == NULL || otherServiceFileTmp == NULL
-			|| selfNativeFile == NULL || otherNativeFile == NULL
-			|| selfNativeFileTmp == NULL || otherNativeFileTmp == NULL
-			|| selfPkgName == NULL || otherPkgName == NULL
-			|| selfSvcName == NULL || otherSvcName == NULL
-			|| sdkVersion == NULL || isCoreService == NULL) {
-		LOGE("parameters cannot be NULL !");
-		return;
-	}
+
+//	if(selfDaemonPath == NULL || selfDaemonName == NULL
+//			|| selfServiceFile == NULL || otherServiceFile == NULL
+//			|| selfServiceFileTmp == NULL || otherServiceFileTmp == NULL
+//			|| selfNativeFile == NULL || otherNativeFile == NULL
+//			|| selfNativeFileTmp == NULL || otherNativeFileTmp == NULL
+//			|| selfPkgName == NULL || otherPkgName == NULL
+//			|| selfSvcName == NULL || otherSvcName == NULL
+//			|| sdkVersion == NULL || isCoreService == NULL) {
+//		LOGE("parameters cannot be NULL !!!");
+//		return;
+//	}
 	//二进制可执行文件
 	char* self_daemon_path = (char*)(*env)->GetStringUTFChars(env, selfDaemonPath, 0);
 	char* self_daemon_name = (char*)(*env)->GetStringUTFChars(env, selfDaemonName, 0);
@@ -53,6 +55,24 @@ JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JN
 	int sdk_version = sdkVersion;
 	//是否为优先守护进程
 	int is_core_service = isCoreService;
+
+    LOGE("selfDaemonPath %s",self_daemon_path);
+    LOGE("selfDaemonName %s",self_daemon_name);
+    LOGE("selfServiceFile %s",self_service_file);
+    LOGE("otherServiceFile %s",other_service_file);
+    LOGE("selfServiceFileTmp %s",self_service_file_tmp);
+    LOGE("otherServiceFileTmp %s",other_service_file_tmp);
+    LOGE("selfNativeFile %s",self_native_file);
+    LOGE("otherNativeFile %s",other_native_file);
+    LOGE("selfNativeFileTmp %s",self_native_file_tmp);
+    LOGE("otherNativeFileTmp %s",other_native_file_tmp);
+    LOGE("selfPkgName %s",self_pkg_name);
+    LOGE("otherPkgName %s",other_pkg_name);
+    LOGE("selfSvcName %s",self_svc_name);
+    LOGE("otherSvcName %s",other_svc_name);
+    LOGE("sdkVersion %d",sdk_version);
+    LOGE("sCoreService %d",is_core_service);
+
 	//杀掉上一次fork的进程
 	kill_zombie_process(self_daemon_name);
 
@@ -68,7 +88,8 @@ JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JN
 				PARAM_SLEF_NATIVE_FILE, self_native_file,
 				PARAM_SLEF_NATIVE_FILE_TMP, self_native_file_tmp,
 				PARAM_IS_CORE_SERVICE, is_core_service,
-				(char *) NULL);
+				(char*) NULL);
+		LOGE("启动文件进程失败：%d", errno);
 	} else if(pid > 0) {
 		int lock_status = 0;
 		int try_time = 0;
@@ -81,10 +102,17 @@ JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JN
 			LOGE("Persistent lock myself failed and exit");
 			return;
 		}
+		LOGE("%s-自锁完成", self_service_file);
 		notify_and_waitfor(self_service_file_tmp, other_native_file_tmp);
 		lock_status = lock_file(other_native_file);
 		if(lock_status) {
-			LOGE("native dead!...........");
+			LOGE("%s 进程fork出的native进程死亡.................", other_svc_name);
+            int count = 1;
+            while(count <= 50){
+                start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
+                LOGE("service进程循环执行：第%d次", count);
+                count++;
+            }
 			java_callback(env, jobj, DAEMON_CALLBACK_NAME);
 		}
 	}
