@@ -103,16 +103,19 @@ JNIEXPORT void JNICALL Java_com_example_tony_daemontest_NativeDaemon_doDaemon(JN
 			return;
 		}
 		LOGE("%s-自锁完成", self_service_file);
+		LOGE("%d-self_service_file", getpid());
 		notify_and_waitfor(self_service_file_tmp, other_native_file_tmp);
 		lock_status = lock_file(other_native_file);
 		if(lock_status) {
+            flock(self_service_file, LOCK_UN);
+            flock(other_native_file, LOCK_UN);
 			LOGE("%s 进程fork出的native进程死亡.................", other_svc_name);
-            int count = 1;
-            while(count <= 50){
-                start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
-                LOGE("service进程循环执行：第%d次", count);
-                count++;
-            }
+//            int count = 1;
+//            while(count <= 50){
+//                start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
+//                LOGE("service进程循环执行：第%d次", count);
+//                count++;
+//            }
 			java_callback(env, jobj, DAEMON_CALLBACK_NAME);
 		}
 	}

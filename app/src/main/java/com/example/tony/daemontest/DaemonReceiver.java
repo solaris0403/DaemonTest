@@ -7,8 +7,9 @@ import android.util.Log;
 
 public class DaemonReceiver extends BroadcastReceiver {
     public static final String ACTION = "com.example.tony.daemontest.DaemonReceiver";
+
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.e("NativeDaemon", intent.getAction());
+        Log.e("NativeDaemon", "DaemonReceiver:" + intent.getAction());
     }
 }

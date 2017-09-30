@@ -17,13 +17,13 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_send).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Launcher launcher = new Launcher(MainActivity.this);
-                launcher.buildBroadcastLauncher(SuperService.class.getCanonicalName());
+//                Launcher launcher = new Launcher(MainActivity.this);
+//                launcher.buildBroadcastLauncher(SuperService.class.getCanonicalName());
                 final long start = System.currentTimeMillis();
                 Log.e("NativeDaemon", String.valueOf(start));
 //                sendBroadcast(new Intent(DaemonReceiver.ACTION));
 //                startService(new Intent(MainActivity.this, SuperService.class));
-                launcher.sendBroadcastByAmsBinder();
+//                launcher.sendBroadcastByAmsBinder();
             }
         });
     }

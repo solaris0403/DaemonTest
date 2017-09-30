@@ -247,7 +247,16 @@ public class NativeDaemon {
     /**
      * native回调
      */
+    public void onDaemonDead(String service) {
+        Log.e("NativeDaemon", "onDaemonDead start");
+    }
+    /**
+     * native回调
+     */
     public void onDaemonDead() {
         Log.e("NativeDaemon", "onDaemonDead start");
+        if (mContext != null) {
+            mContext.startService(new Intent(mContext, SuperService.class));
+        }
     }
 }

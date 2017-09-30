@@ -112,8 +112,8 @@ void send_broadcast(char* action) {
 		if (action == NULL) {
 			exit(EXIT_SUCCESS);
 		}
-		LOGE("send broadcast");
-		execlp("am", "am", "broadcast", "-a", action, (char *) NULL);
+		LOGE("send broadcast: %s", action);
+		execlp("am", "am", "broadcast", "-a", "com.example.tony.daemontest.DaemonReceiver", (char *) NULL);
 		exit(EXIT_SUCCESS);
 	} else {
 //		waitpid(pid, NULL, 0);

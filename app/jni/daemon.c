@@ -58,16 +58,27 @@ int main(int argc, char *argv[]){
             return 0;
         }
         LOGE("%s-自锁完成", self_native_file);
+        if(0==fork()){
+            LOGE("发送广播");
+//            execlp("am", "am", "broadcast", "--user", "0", "-a", "com.example.tony.daemontest.DaemonReceiver", (char *) NULL);
+//            start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
+        }
         notify_and_waitfor(self_native_file_tmp, other_service_file_tmp);
         lock_status = lock_file(other_service_file);
         if(lock_status){
-            LOGE("%s 进程死亡.................", other_svc_name);
-            int count = 1;
-            while(count <= 200){
-                start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
-                LOGE("native进程循环执行：第%d次", count);
-                count++;
+            flock(self_native_file, LOCK_UN);
+            flock(other_service_file, LOCK_UN);
+            while(1){
+                LOGE("%s 进程死亡.................", other_svc_name);
+                usleep(1000);
             }
+//            remove(other_service_file);
+//            int count = 1;
+//            while(count <= 200){
+//                start_service("com.example.tony.daemontest", "com.example.tony.daemontest.SuperService");
+//                LOGE("native进程循环执行：第%d次", count);
+//                count++;
+//            }
         }
     }else{
         exit(EXIT_SUCCESS);
